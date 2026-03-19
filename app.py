@@ -2,10 +2,10 @@ import streamlit as st
 import pandas as pd
 import urllib.parse
 
-# ✅ Load Excel from GitHub RAW (WORKING)
-@st.cache_data(ttl=30)
+# 🔗 Load data from Google Sheets (LIVE)
+@st.cache_data(ttl=10)
 def load_data():
-    url = "https://raw.githubusercontent.com/dilanraghnall2004-spec/tyre-dashboard/main/tyre_data.xlsx"
+    url = "https://docs.google.com/spreadsheets/d/1S-_eEnKvv4A08TBtzF_2lLj8FzItXZOPRchIfIKHV1E/export?format=xlsx"
     df = pd.read_excel(url, engine="openpyxl")
     return df
 
@@ -15,7 +15,7 @@ df = load_data()
 st.set_page_config(page_title="Tyre Dashboard", layout="wide")
 st.title("🚛 Tyre Dashboard")
 
-# Get tyre from PPT link
+# URL param (for PPT buttons)
 query_params = st.query_params
 tyre = query_params.get("tyre", None)
 
@@ -25,7 +25,7 @@ if tyre:
 else:
     selected_tyre = st.selectbox("Select Tyre", df['Tyre_Name'])
 
-# Filter
+# Filter data
 data = df[df['Tyre_Name'] == selected_tyre]
 
 if data.empty:
@@ -49,7 +49,7 @@ else:
         else:
             col2.write(f"**{col}:** {value}")
 
-# Refresh
+# Refresh button
 if st.button("🔄 Refresh Data"):
     st.cache_data.clear()
     st.rerun()
