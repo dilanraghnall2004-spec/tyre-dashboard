@@ -1,14 +1,27 @@
 import streamlit as st
 import pandas as pd
 import urllib.parse
+import requests
+from io import BytesIO
 
-# 🔗 Load Excel from OneDrive (LIVE AUTO UPDATE)
+# 🔗 Load Excel from OneDrive (LIVE + FIXED)
 @st.cache_data(ttl=30)
 def load_data():
     url = "https://onedrive.live.com/download?resid=E8C5E0FA2C7E7634!122&authkey=!BnZTu7"
-    df = pd.read_excel(url, engine="openpyxl")
-    return df
+    
+    try:
+        response = requests.get(url)
+        response.raise_for_status()  # check if download successful
+        
+        file_bytes = BytesIO(response.content)
+        df = pd.read_excel(file_bytes, engine="openpyxl")
+        return df
+    
+    except Exception as e:
+        st.error("❌ Error loading Excel from OneDrive")
+        st.stop()
 
+# Load data
 df = load_data()
 
 # 🖥️ Page setup
@@ -30,24 +43,24 @@ else:
 # 📊 Filter data
 data = df[df['Tyre_Name'] == selected_tyre]
 
-# ⚠️ Handle error
+# ⚠️ Handle case
 if data.empty:
     st.error("❌ Tyre not found!")
 else:
     st.subheader(f"Details for: {selected_tyre}")
 
-    # 📦 Clean layout (2 columns)
+    # 📦 Layout (2 columns)
     col1, col2 = st.columns(2)
 
     for i, col in enumerate(data.columns):
 
-        # ❌ Skip Tyre_Name (already shown)
+        # Skip repeated column
         if col == "Tyre_Name":
             continue
 
         value = data.iloc[0][col]
 
-        # ❌ Skip empty values
+        # Skip empty values
         if pd.isna(value):
             continue
 
@@ -61,6 +74,6 @@ if st.button("🔄 Refresh Data"):
     st.cache_data.clear()
     st.rerun()
 
-# 📋 Optional full data
+# 📋 Full dataset view
 with st.expander("📋 View Full Data"):
     st.dataframe(df)
