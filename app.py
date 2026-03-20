@@ -11,7 +11,6 @@ st.markdown("""
 .block-container {
     padding-top: 2rem;
 }
-
 .card {
     background-color:#262730;
     padding:12px;
@@ -47,11 +46,16 @@ else:
 # ---------------- FILTER DATA ----------------
 data = df[df['Tyre_Name'] == selected_tyre]
 
-# ---------------- IMAGE FUNCTION (GITHUB RAW) ----------------
-def get_image_url(tyre):
+# ---------------- IMAGE FUNCTION ----------------
+def get_image_urls(tyre):
     name = tyre.replace("/", "_").replace(" ", "_")
-    base_url = "https://raw.githubusercontent.com/dilanraghnall2004-spec/tyre-dashboard/main/images/"
-    return base_url + name + ".jpg"
+    base = "https://raw.githubusercontent.com/dilanraghnall2004-spec/tyre-dashboard/main/images/"
+    
+    return [
+        base + name + ".jpg",
+        base + name + ".jpeg",
+        base + name + ".png"
+    ]
 
 # ---------------- MAIN DISPLAY ----------------
 if data.empty:
@@ -59,10 +63,21 @@ if data.empty:
 else:
     col1, col2 = st.columns([1.2, 1.8])
 
-    # IMAGE
+    # IMAGE (TRY MULTIPLE FORMATS)
     with col1:
-        image_url = get_image_url(selected_tyre)
-        st.image(image_url, use_container_width=True)
+        urls = get_image_urls(selected_tyre)
+
+        displayed = False
+        for url in urls:
+            try:
+                st.image(url, use_container_width=True)
+                displayed = True
+                break
+            except:
+                continue
+
+        if not displayed:
+            st.warning("No image available")
 
     # DETAILS
     with col2:
