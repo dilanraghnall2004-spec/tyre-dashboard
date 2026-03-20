@@ -19,10 +19,10 @@ body {
 }
 .card {
     background-color: white;
-    padding: 20px;
-    border-radius: 12px;
-    box-shadow: 0px 4px 10px rgba(0,0,0,0.1);
-    margin-bottom: 15px;
+    padding: 15px;
+    border-radius: 10px;
+    box-shadow: 0px 3px 8px rgba(0,0,0,0.1);
+    margin-bottom: 10px;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -57,7 +57,13 @@ data = df[df['Tyre_Name'] == selected_tyre]
 # ------------------ IMAGE FUNCTION ------------------
 def get_image_name(tyre):
     name = tyre.replace("/", "_").replace(" ", "_")
-    return f"images/{name}.jpg"
+    
+    if os.path.exists(f"images/{name}.jpg"):
+        return f"images/{name}.jpg"
+    elif os.path.exists(f"images/{name}.jpeg"):
+        return f"images/{name}.jpeg"
+    else:
+        return None
 
 # ------------------ MAIN CONTENT ------------------
 if data.empty:
@@ -67,15 +73,15 @@ else:
 
     col1, col2 = st.columns([1, 2])
 
-    # IMAGE SECTION
+    # 📸 IMAGE
     image_path = get_image_name(selected_tyre)
 
-    if os.path.exists(image_path):
+    if image_path:
         col1.image(image_path, use_container_width=True)
     else:
         col1.warning("No image available")
 
-    # DETAILS SECTION
+    # 📊 DETAILS
     with col2:
         for col in data.columns:
             if col == "Tyre_Name":
@@ -96,7 +102,11 @@ else:
 st.markdown("---")
 st.caption("© 2026 Tyre Dashboard | Developed by Dilaa")
 
-# ------------------ REFRESH ------------------
+# ------------------ REFRESH BUTTON ------------------
 if st.button("🔄 Refresh Data"):
     st.cache_data.clear()
     st.rerun()
+
+# ------------------ FULL DATA VIEW ------------------
+with st.expander("📋 View Full Data"):
+    st.dataframe(df)
