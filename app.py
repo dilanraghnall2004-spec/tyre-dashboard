@@ -1,21 +1,47 @@
 import streamlit as st
 import pandas as pd
 import urllib.parse
+import os
 
-# 🔗 Load data from Google Sheets (LIVE)
+# ------------------ CONFIG ------------------
+st.set_page_config(page_title="Tyre Dashboard", layout="wide")
+
+# ------------------ CUSTOM CSS ------------------
+st.markdown("""
+<style>
+body {
+    background-color: #f5f7fa;
+}
+.main-title {
+    font-size: 40px;
+    font-weight: bold;
+    color: #1f4e79;
+}
+.card {
+    background-color: white;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0px 4px 10px rgba(0,0,0,0.1);
+    margin-bottom: 15px;
+}
+</style>
+""", unsafe_allow_html=True)
+
+# ------------------ LOAD DATA ------------------
 @st.cache_data(ttl=10)
 def load_data():
     url = "https://docs.google.com/spreadsheets/d/1S-_eEnKvv4A08TBtzF_2lLj8FzItXZOPRchIfIKHV1E/export?format=xlsx"
-    df = pd.read_excel(url, engine="openpyxl")
-    return df
+    return pd.read_excel(url, engine="openpyxl")
 
 df = load_data()
 
-# UI
-st.set_page_config(page_title="Tyre Dashboard", layout="wide")
-st.title("🚛 Tyre Dashboard")
+# ------------------ HEADER ------------------
+st.markdown('<div class="main-title">🚛 Tyre Dashboard</div>', unsafe_allow_html=True)
+st.markdown("---")
 
-# URL param (for PPT buttons)
+# ------------------ SIDEBAR ------------------
+st.sidebar.title("🔍 Select Tyre")
+
 query_params = st.query_params
 tyre = query_params.get("tyre", None)
 
@@ -23,37 +49,54 @@ if tyre:
     tyre = urllib.parse.unquote(tyre)
     selected_tyre = tyre
 else:
-    selected_tyre = st.selectbox("Select Tyre", df['Tyre_Name'])
+    selected_tyre = st.sidebar.selectbox("Choose Tyre", df['Tyre_Name'])
 
-# Filter data
+# ------------------ FILTER DATA ------------------
 data = df[df['Tyre_Name'] == selected_tyre]
 
+# ------------------ IMAGE FUNCTION ------------------
+def get_image_name(tyre):
+    name = tyre.replace("/", "_").replace(" ", "_")
+    return f"images/{name}.jpg"
+
+# ------------------ MAIN CONTENT ------------------
 if data.empty:
     st.error("❌ Tyre not found!")
 else:
-    st.subheader(f"Details for: {selected_tyre}")
+    st.subheader(selected_tyre)
 
-    col1, col2 = st.columns(2)
+    col1, col2 = st.columns([1, 2])
 
-    for i, col in enumerate(data.columns):
-        if col == "Tyre_Name":
-            continue
+    # IMAGE SECTION
+    image_path = get_image_name(selected_tyre)
 
-        value = data.iloc[0][col]
+    if os.path.exists(image_path):
+        col1.image(image_path, use_container_width=True)
+    else:
+        col1.warning("No image available")
 
-        if pd.isna(value):
-            continue
+    # DETAILS SECTION
+    with col2:
+        for col in data.columns:
+            if col == "Tyre_Name":
+                continue
 
-        if i % 2 == 0:
-            col1.write(f"**{col}:** {value}")
-        else:
-            col2.write(f"**{col}:** {value}")
+            value = data.iloc[0][col]
 
-# Refresh button
+            if pd.isna(value):
+                continue
+
+            st.markdown(f"""
+            <div class="card">
+                <b>{col}</b><br>{value}
+            </div>
+            """, unsafe_allow_html=True)
+
+# ------------------ FOOTER ------------------
+st.markdown("---")
+st.caption("© 2026 Tyre Dashboard | Developed by Dilaa")
+
+# ------------------ REFRESH ------------------
 if st.button("🔄 Refresh Data"):
     st.cache_data.clear()
     st.rerun()
-
-# Full data
-with st.expander("📋 View Full Data"):
-    st.dataframe(df)
