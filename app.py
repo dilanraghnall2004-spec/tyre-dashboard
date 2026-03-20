@@ -1,33 +1,28 @@
 import streamlit as st
 import pandas as pd
 import urllib.parse
-import os
 
-# ------------------ CONFIG ------------------
+# ---------------- CONFIG ----------------
 st.set_page_config(page_title="Tyre Dashboard", layout="wide")
 
-# ------------------ CUSTOM CSS ------------------
+# ---------------- CSS ----------------
 st.markdown("""
 <style>
-body {
-    background-color: #f5f7fa;
+.block-container {
+    padding-top: 2rem;
 }
-.main-title {
-    font-size: 40px;
-    font-weight: bold;
-    color: #1f4e79;
-}
+
 .card {
-    background-color: white;
-    padding: 15px;
-    border-radius: 10px;
-    box-shadow: 0px 3px 8px rgba(0,0,0,0.1);
-    margin-bottom: 10px;
+    background-color:#262730;
+    padding:12px;
+    border-radius:8px;
+    margin-bottom:10px;
+    color:white;
 }
 </style>
 """, unsafe_allow_html=True)
 
-# ------------------ LOAD DATA ------------------
+# ---------------- LOAD DATA ----------------
 @st.cache_data(ttl=10)
 def load_data():
     url = "https://docs.google.com/spreadsheets/d/1S-_eEnKvv4A08TBtzF_2lLj8FzItXZOPRchIfIKHV1E/export?format=xlsx"
@@ -35,13 +30,11 @@ def load_data():
 
 df = load_data()
 
-# ------------------ HEADER ------------------
-st.markdown('<div class="main-title">🚛 Tyre Dashboard</div>', unsafe_allow_html=True)
+# ---------------- HEADER ----------------
+st.title("🚛 Tyre Dashboard")
 st.markdown("---")
 
-# ------------------ SIDEBAR ------------------
-st.sidebar.title("🔍 Select Tyre")
-
+# ---------------- GET TYRE FROM URL ----------------
 query_params = st.query_params
 tyre = query_params.get("tyre", None)
 
@@ -49,40 +42,33 @@ if tyre:
     tyre = urllib.parse.unquote(tyre)
     selected_tyre = tyre
 else:
-    selected_tyre = st.sidebar.selectbox("Choose Tyre", df['Tyre_Name'])
+    selected_tyre = st.selectbox("Select Tyre", df['Tyre_Name'])
 
-# ------------------ FILTER DATA ------------------
+# ---------------- FILTER DATA ----------------
 data = df[df['Tyre_Name'] == selected_tyre]
 
-# ------------------ IMAGE FUNCTION ------------------
-def get_image_name(tyre):
+# ---------------- IMAGE FUNCTION (GITHUB RAW) ----------------
+def get_image_url(tyre):
     name = tyre.replace("/", "_").replace(" ", "_")
-    
-    if os.path.exists(f"images/{name}.jpg"):
-        return f"images/{name}.jpg"
-    elif os.path.exists(f"images/{name}.jpeg"):
-        return f"images/{name}.jpeg"
-    else:
-        return None
+    base_url = "https://raw.githubusercontent.com/dilanraghnall2004-spec/tyre-dashboard/main/images/"
+    return base_url + name + ".jpg"
 
-# ------------------ MAIN CONTENT ------------------
+# ---------------- MAIN DISPLAY ----------------
 if data.empty:
-    st.error("❌ Tyre not found!")
+    st.error("❌ Tyre not found")
 else:
-    st.subheader(selected_tyre)
+    col1, col2 = st.columns([1.2, 1.8])
 
-    col1, col2 = st.columns([1, 2])
+    # IMAGE
+    with col1:
+        image_url = get_image_url(selected_tyre)
+        st.image(image_url, use_container_width=True)
 
-    # 📸 IMAGE
-    image_path = get_image_name(selected_tyre)
-
-    if image_path:
-        col1.image(image_path, use_container_width=True)
-    else:
-        col1.warning("No image available")
-
-    # 📊 DETAILS
+    # DETAILS
     with col2:
+        st.markdown(f"## {selected_tyre}")
+        st.markdown("---")
+
         for col in data.columns:
             if col == "Tyre_Name":
                 continue
@@ -94,19 +80,25 @@ else:
 
             st.markdown(f"""
             <div class="card">
-                <b>{col}</b><br>{value}
+                <b style="color:#00c6ff;">{col}</b><br>
+                {value}
             </div>
             """, unsafe_allow_html=True)
 
-# ------------------ FOOTER ------------------
+# ---------------- SHARE LINK ----------------
 st.markdown("---")
-st.caption("© 2026 Tyre Dashboard | Developed by Dilaa")
 
-# ------------------ REFRESH BUTTON ------------------
+encoded = urllib.parse.quote(selected_tyre)
+link = f"https://tyre-dashboard-5wfsa7tiw8f5wbfhlk2uz7.streamlit.app/?tyre={encoded}"
+
+st.subheader("🔗 Share this Tyre")
+st.code(link)
+
+# ---------------- REFRESH ----------------
 if st.button("🔄 Refresh Data"):
     st.cache_data.clear()
     st.rerun()
 
-# ------------------ FULL DATA VIEW ------------------
+# ---------------- FULL DATA ----------------
 with st.expander("📋 View Full Data"):
     st.dataframe(df)
