@@ -20,7 +20,7 @@ st.title("🚛 Tyre Dashboard")
 st.markdown("---")
 
 # -----------------------------
-# SELECT TYRE
+# SELECT TYRE (WITH URL SUPPORT)
 # -----------------------------
 query_params = st.query_params
 selected_tyre = query_params.get("tyre", df["Tyre_Name"].iloc[0])
@@ -34,12 +34,11 @@ selected_tyre = st.selectbox(
 row = df[df["Tyre_Name"] == selected_tyre].iloc[0]
 
 # -----------------------------
-# IMAGE NAME FIX (IMPORTANT)
+# IMAGE NAME FIX
 # -----------------------------
 def format_image_name(name):
-    name = name.replace("/", "_")   # 295/75 → 295_75
-    name = name.replace(" ", "_")   # spaces → _
-    # DO NOT replace dot (.) because your file has 22.5
+    name = name.replace("/", "_")
+    name = name.replace(" ", "_")
     return name
 
 def get_image_url(name):
@@ -53,46 +52,78 @@ img_url = get_image_url(selected_tyre)
 # -----------------------------
 col1, col2 = st.columns([1, 2])
 
-# IMAGE
+# -----------------------------
+# LEFT SIDE (IMAGE)
+# -----------------------------
 with col1:
     st.subheader("📸 Tyre Image")
     st.image(img_url, use_container_width=True)
 
-# DETAILS
+# -----------------------------
+# RIGHT SIDE (GRID DETAILS)
+# -----------------------------
 with col2:
     st.subheader(row["Tyre_Name"])
     st.markdown("---")
 
     def card(title, value):
-        st.markdown(f"""
+        return f"""
         <div style="
             background:#1e1e2f;
             padding:15px;
-            border-radius:10px;
-            margin-bottom:10px;">
+            border-radius:12px;
+            margin-bottom:10px;
+            height:100%;
+            box-shadow:0 2px 6px rgba(0,0,0,0.3);">
             <b style="color:#00d4ff;">{title}</b><br>
-            <span style="color:white;">{value}</span>
+            <span style="color:white;font-size:16px;">{value}</span>
         </div>
-        """, unsafe_allow_html=True)
+        """
 
-    card("Phase", row.get("Phase", "-"))
-    card("Size", row.get("Size", "-"))
-    card("Pattern", row.get("Pattern", "-"))
-    card("India FG code", row.get("India FG code", "-"))
-    card("US FG code", row.get("US FG code", "-"))
-    card("SOP date", row.get("SOP date", "-"))
-    card("No of tyres sold till date", row.get("No of tyres sold till date", "-"))
-    card("No of mould", row.get("No of mould", "-"))
-    card("Benchmark tyres", row.get("Benchmark tyres", "-"))
-    card("OD", row.get("OD", "-"))
-    card("SW", row.get("SW", "-"))
-    card("NSD", row.get("NSD", "-"))
-    card("RIM", row.get("RIM", "-"))
+    # ROW 1
+    c1, c2, c3 = st.columns(3)
+    with c1:
+        st.markdown(card("Phase", row.get("Phase", "-")), unsafe_allow_html=True)
+    with c2:
+        st.markdown(card("Size", row.get("Size", "-")), unsafe_allow_html=True)
+    with c3:
+        st.markdown(card("Pattern", row.get("Pattern", "-")), unsafe_allow_html=True)
+
+    # ROW 2
+    c1, c2, c3 = st.columns(3)
+    with c1:
+        st.markdown(card("India FG code", row.get("India FG code", "-")), unsafe_allow_html=True)
+    with c2:
+        st.markdown(card("US FG code", row.get("US FG code", "-")), unsafe_allow_html=True)
+    with c3:
+        st.markdown(card("SOP date", row.get("SOP date", "-")), unsafe_allow_html=True)
+
+    # ROW 3
+    c1, c2, c3 = st.columns(3)
+    with c1:
+        st.markdown(card("Tyres Sold", row.get("No of tyres sold till date", "-")), unsafe_allow_html=True)
+    with c2:
+        st.markdown(card("No of mould", row.get("No of mould", "-")), unsafe_allow_html=True)
+    with c3:
+        st.markdown(card("Benchmark", row.get("Benchmark tyres", "-")), unsafe_allow_html=True)
+
+    # ROW 4
+    c1, c2, c3, c4 = st.columns(4)
+    with c1:
+        st.markdown(card("OD", row.get("OD", "-")), unsafe_allow_html=True)
+    with c2:
+        st.markdown(card("SW", row.get("SW", "-")), unsafe_allow_html=True)
+    with c3:
+        st.markdown(card("NSD", row.get("NSD", "-")), unsafe_allow_html=True)
+    with c4:
+        st.markdown(card("RIM", row.get("RIM", "-")), unsafe_allow_html=True)
 
 # -----------------------------
-# REFRESH
+# REFRESH BUTTON
 # -----------------------------
-st.button("🔄 Refresh Data")
+if st.button("🔄 Refresh Data"):
+    st.cache_data.clear()
+    st.rerun()
 
 # -----------------------------
 # FULL TABLE
