@@ -14,32 +14,52 @@ def load_data():
 df = load_data()
 
 # =========================
-# GET TYRE FROM URL (DO NOT CHANGE LINK)
+# TITLE
+# =========================
+st.title("🚛 Tyre Dashboard")
+
+# =========================
+# GET TYRE FROM URL (SAFE)
 # =========================
 query_params = st.query_params
-selected_tyre = query_params.get("tyre", df["Tyre_Name"].iloc[0])
+url_tyre = query_params.get("tyre", None)
 
-# Dropdown (still works)
+if url_tyre in df["Tyre_Name"].values:
+    default_index = df[df["Tyre_Name"] == url_tyre].index[0]
+else:
+    default_index = 0
+
+# =========================
+# SELECTBOX
+# =========================
 selected_tyre = st.selectbox(
     "Select Tyre",
     df["Tyre_Name"],
-    index=df[df["Tyre_Name"] == selected_tyre].index[0]
+    index=default_index
 )
 
-row = df[df["Tyre_Name"] == selected_tyre].iloc[0]
+# =========================
+# GET ROW SAFELY
+# =========================
+row_df = df[df["Tyre_Name"] == selected_tyre]
+
+if row_df.empty:
+    st.error("Tyre not found")
+    st.stop()
+
+row = row_df.iloc[0]
 
 # =========================
-# IMAGE FIX (ONLY INTERNAL)
+# IMAGE FUNCTION (FIXED)
 # =========================
 def get_image_url(tyre_name):
-    # DO NOT change URL — only convert for image
-    image_name = tyre_name.replace("/", "_").replace(" ", "_")
-    return f"https://raw.githubusercontent.com/dilanraghnall2004-spec/tyre-dashboard/main/images/{image_name}.jpg"
+    name = tyre_name.replace("/", "_").replace(" ", "_")
+    return f"https://raw.githubusercontent.com/dilanraghnall2004-spec/tyre-dashboard/main/images/{name}.jpg"
 
 image_url = get_image_url(selected_tyre)
 
 # =========================
-# SAFE VALUE
+# SAFE VALUE FUNCTION
 # =========================
 def get_val(col):
     val = row.get(col)
@@ -48,8 +68,6 @@ def get_val(col):
 # =========================
 # LAYOUT
 # =========================
-st.title("🚛 Tyre Dashboard")
-
 col1, col2 = st.columns([1, 2])
 
 # ---- IMAGE ----
@@ -77,7 +95,7 @@ with col2:
         st.info(f"**Moulds**\n\n{get_val('No of mould')}")
 
 # =========================
-# FULL DATA
+# FULL DATA TABLE
 # =========================
 with st.expander("📋 View Full Data"):
     st.dataframe(df, use_container_width=True)
