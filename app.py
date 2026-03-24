@@ -1,75 +1,66 @@
 import streamlit as st
 import pandas as pd
-import urllib.parse
 
 st.set_page_config(page_title="Tyre Dashboard", layout="wide")
 
 # -----------------------------
-# LOAD DATA (Google Sheets / GitHub / Local)
+# LOAD DATA (Google Sheet)
 # -----------------------------
 @st.cache_data
 def load_data():
     url = "https://docs.google.com/spreadsheets/d/1S-_eEnKvv4A08TBtzF_2lLj8FzItXZOPRchIfIKHV1E/export?format=csv"
-    df = pd.read_csv(url)
-    return df
+    return pd.read_csv(url)
 
 df = load_data()
 
 # -----------------------------
 # TITLE
 # -----------------------------
-st.markdown("## 🚛 Tyre Dashboard")
+st.title("🚛 Tyre Dashboard")
 st.markdown("---")
 
 # -----------------------------
-# GET TYRE FROM URL
+# SELECT TYRE
 # -----------------------------
 query_params = st.query_params
 selected_tyre = query_params.get("tyre", df["Tyre_Name"].iloc[0])
 
-# Dropdown
-selected_tyre = st.selectbox("Select Tyre", df["Tyre_Name"], 
-                             index=list(df["Tyre_Name"]).index(selected_tyre))
+selected_tyre = st.selectbox(
+    "Select Tyre",
+    df["Tyre_Name"],
+    index=list(df["Tyre_Name"]).index(selected_tyre)
+)
 
-# Get row
 row = df[df["Tyre_Name"] == selected_tyre].iloc[0]
 
 # -----------------------------
-# IMAGE FUNCTION (JPG + JPEG)
+# IMAGE NAME FIX (IMPORTANT)
 # -----------------------------
-def get_image_url(tyre_name):
+def format_image_name(name):
+    name = name.replace("/", "_")   # 295/75 → 295_75
+    name = name.replace(" ", "_")   # spaces → _
+    # DO NOT replace dot (.) because your file has 22.5
+    return name
+
+def get_image_url(name):
     base = "https://raw.githubusercontent.com/dilanraghnall2004-spec/tyre-dashboard/main/images/"
-    
-    name = tyre_name.replace(" ", "_")
-    
-    jpg = base + name + ".jpg"
-    jpeg = base + name + ".jpeg"
-    
-    return jpg, jpeg
+    return base + format_image_name(name) + ".jpg"
 
-jpg_url, jpeg_url = get_image_url(selected_tyre)
+img_url = get_image_url(selected_tyre)
 
 # -----------------------------
-# MAIN LAYOUT (SIDE BY SIDE)
+# LAYOUT
 # -----------------------------
 col1, col2 = st.columns([1, 2])
 
-# LEFT → IMAGE
+# IMAGE
 with col1:
-    st.markdown("### 📸 Tyre Image")
+    st.subheader("📸 Tyre Image")
+    st.image(img_url, use_container_width=True)
 
-    # Try jpg first, then jpeg
-    try:
-        st.image(jpg_url, use_container_width=True)
-    except:
-        try:
-            st.image(jpeg_url, use_container_width=True)
-        except:
-            st.warning("Image not found")
-
-# RIGHT → DETAILS
+# DETAILS
 with col2:
-    st.markdown(f"## {row['Tyre_Name']}")
+    st.subheader(row["Tyre_Name"])
     st.markdown("---")
 
     def card(title, value):
@@ -84,27 +75,27 @@ with col2:
         </div>
         """, unsafe_allow_html=True)
 
-    card("Phase", row["Phase"])
-    card("Size", row["Size"])
-    card("Pattern", row["Pattern"])
-    card("India FG code", row.get("India FG code", "—"))
-    card("US FG code", row.get("US FG code", "—"))
-    card("SOP date", row.get("SOP date", "—"))
-    card("No of tyres sold till date", row.get("No of tyres sold till date", "—"))
-    card("No of mould", row.get("No of mould", "—"))
-    card("Benchmark tyres", row.get("Benchmark tyres", "—"))
-    card("OD", row.get("OD", "—"))
-    card("SW", row.get("SW", "—"))
-    card("NSD", row.get("NSD", "—"))
-    card("RIM", row.get("RIM", "—"))
+    card("Phase", row.get("Phase", "-"))
+    card("Size", row.get("Size", "-"))
+    card("Pattern", row.get("Pattern", "-"))
+    card("India FG code", row.get("India FG code", "-"))
+    card("US FG code", row.get("US FG code", "-"))
+    card("SOP date", row.get("SOP date", "-"))
+    card("No of tyres sold till date", row.get("No of tyres sold till date", "-"))
+    card("No of mould", row.get("No of mould", "-"))
+    card("Benchmark tyres", row.get("Benchmark tyres", "-"))
+    card("OD", row.get("OD", "-"))
+    card("SW", row.get("SW", "-"))
+    card("NSD", row.get("NSD", "-"))
+    card("RIM", row.get("RIM", "-"))
 
 # -----------------------------
-# REFRESH BUTTON
+# REFRESH
 # -----------------------------
 st.button("🔄 Refresh Data")
 
 # -----------------------------
-# FULL DATA TABLE
+# FULL TABLE
 # -----------------------------
 with st.expander("📊 View Full Data"):
     st.dataframe(df)
