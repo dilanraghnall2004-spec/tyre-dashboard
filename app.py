@@ -1,10 +1,13 @@
 import streamlit as st
 import pandas as pd
 
+# -----------------------------
+# PAGE SETTINGS
+# -----------------------------
 st.set_page_config(page_title="Tyre Dashboard", layout="wide")
 
 # -----------------------------
-# LOAD DATA (Google Sheet)
+# LOAD DATA (LIVE GOOGLE SHEET)
 # -----------------------------
 @st.cache_data
 def load_data():
@@ -20,7 +23,7 @@ st.title("🚛 Tyre Dashboard")
 st.markdown("---")
 
 # -----------------------------
-# SELECT TYRE
+# SELECT TYRE (URL SUPPORT)
 # -----------------------------
 query_params = st.query_params
 selected_tyre = query_params.get("tyre", df["Tyre_Name"].iloc[0])
@@ -31,16 +34,16 @@ selected_tyre = st.selectbox(
     index=list(df["Tyre_Name"]).index(selected_tyre)
 )
 
+# GET SELECTED ROW
 row = df[df["Tyre_Name"] == selected_tyre].iloc[0]
 
 # -----------------------------
-# IMAGE NAME FIX (IMPORTANT)
+# IMAGE NAME FIX
 # -----------------------------
 def format_image_name(name):
-    name = name.replace("/", "_")   # 295/75 → 295_75
-    name = name.replace(" ", "_")   # spaces → _
-    # DO NOT replace dot (.) because your file has 22.5
-    return name
+    name = name.replace("/", "_")   # FIX slash
+    name = name.replace(" ", "_")   # FIX space
+    return name  # keep 22.5 as is
 
 def get_image_url(name):
     base = "https://raw.githubusercontent.com/dilanraghnall2004-spec/tyre-dashboard/main/images/"
@@ -49,53 +52,59 @@ def get_image_url(name):
 img_url = get_image_url(selected_tyre)
 
 # -----------------------------
-# LAYOUT
+# MAIN DISPLAY (ONE PAGE FLOW)
 # -----------------------------
-col1, col2 = st.columns([1, 2])
+st.subheader(row["Tyre_Name"])
+st.markdown("---")
 
 # IMAGE
-with col1:
-    st.subheader("📸 Tyre Image")
-    st.image(img_url, use_container_width=True)
+st.image(img_url, use_container_width=True)
 
-# DETAILS
-with col2:
-    st.subheader(row["Tyre_Name"])
-    st.markdown("---")
-
-    def card(title, value):
-        st.markdown(f"""
-        <div style="
-            background:#1e1e2f;
-            padding:15px;
-            border-radius:10px;
-            margin-bottom:10px;">
-            <b style="color:#00d4ff;">{title}</b><br>
-            <span style="color:white;">{value}</span>
-        </div>
-        """, unsafe_allow_html=True)
-
-    card("Phase", row.get("Phase", "-"))
-    card("Size", row.get("Size", "-"))
-    card("Pattern", row.get("Pattern", "-"))
-    card("India FG code", row.get("India FG code", "-"))
-    card("US FG code", row.get("US FG code", "-"))
-    card("SOP date", row.get("SOP date", "-"))
-    card("No of tyres sold till date", row.get("No of tyres sold till date", "-"))
-    card("No of mould", row.get("No of mould", "-"))
-    card("Benchmark tyres", row.get("Benchmark tyres", "-"))
-    card("OD", row.get("OD", "-"))
-    card("SW", row.get("SW", "-"))
-    card("NSD", row.get("NSD", "-"))
-    card("RIM", row.get("RIM", "-"))
+st.markdown("## 📊 Tyre Details")
 
 # -----------------------------
-# REFRESH
+# CARD DESIGN FUNCTION
 # -----------------------------
-st.button("🔄 Refresh Data")
+def card(title, value):
+    st.markdown(f"""
+    <div style="
+        background:#1e1e2f;
+        padding:15px;
+        border-radius:10px;
+        margin-bottom:10px;
+        box-shadow:0 2px 6px rgba(0,0,0,0.3);
+    ">
+        <b style="color:#00d4ff;">{title}</b><br>
+        <span style="color:white;">{value}</span>
+    </div>
+    """, unsafe_allow_html=True)
 
 # -----------------------------
-# FULL TABLE
+# SHOW ALL DETAILS
+# -----------------------------
+card("Phase", row.get("Phase", "-"))
+card("Size", row.get("Size", "-"))
+card("Pattern", row.get("Pattern", "-"))
+card("India FG code", row.get("India FG code", "-"))
+card("US FG code", row.get("US FG code", "-"))
+card("SOP date", row.get("SOP date", "-"))
+card("No of tyres sold till date", row.get("No of tyres sold till date", "-"))
+card("No of mould", row.get("No of mould", "-"))
+card("Benchmark tyres", row.get("Benchmark tyres", "-"))
+card("OD", row.get("OD", "-"))
+card("SW", row.get("SW", "-"))
+card("NSD", row.get("NSD", "-"))
+card("RIM", row.get("RIM", "-"))
+
+# -----------------------------
+# REFRESH BUTTON
+# -----------------------------
+if st.button("🔄 Refresh Data"):
+    st.cache_data.clear()
+    st.rerun()
+
+# -----------------------------
+# FULL DATA TABLE
 # -----------------------------
 with st.expander("📊 View Full Data"):
     st.dataframe(df)
